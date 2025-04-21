@@ -153,7 +153,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-700">
-            <tr v-for="reservation in filteredReservations" :key="reservation.id" class="hover:bg-gray-700">
+            <tr v-for="reservation in paginatedReservations" :key="reservation.id" class="hover:bg-gray-700">
               <td class="px-6 py-4 whitespace-nowrap text-sm">{{ reservation.name }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">{{ reservation.phone }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">{{ reservation.branch }}</td>
@@ -215,6 +215,44 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Add this after the table -->
+      <div class="bg-gray-800 p-4 rounded-lg mt-4 flex items-center justify-between">
+        <div class="text-sm text-gray-400">
+          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredReservations.length) }} of {{ filteredReservations.length }} orders
+        </div>
+        <div class="flex space-x-2">
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <div class="flex space-x-1">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'px-3 py-1 rounded',
+                currentPage === page 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              ]"
+            >
+              {{ page }}
+            </button>
+          </div>
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       <!-- Archive and Export Buttons -->
@@ -331,6 +369,24 @@ const cancelledCount = computed(() => {
 
 const totalCount = computed(() => {
   return filteredReservations.value.length
+})
+
+// Add pagination
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
+
+// Computed properties for pagination
+const paginatedReservations = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredReservations.value.slice(start, end)
+})
+
+const totalPages = computed(() => Math.ceil(filteredReservations.value.length / itemsPerPage.value))
+
+// Reset page when filters change
+watch([searchQuery, selectedBranch, statusFilter], () => {
+  currentPage.value = 1
 })
 
 // Function to create beep sound

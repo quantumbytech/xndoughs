@@ -195,34 +195,73 @@ const handleSubmit = async () => {
       createdAt: new Date().toISOString()
     };
 
-    try {
-      // Send reservation to backend
-      const response = await reservationService.createReservation(reservation);
-      
+    console.log('Submitting reservation:', reservation);
+
+    let retryCount = 0;
+    let success = false;
+    let response = null;
+    
+    // Retry mechanism for unreliable networks
+    while (retryCount < 3 && !success) {
+      try {
+        // Send reservation to backend
+        response = await reservationService.createReservation(reservation);
+        success = true;
+        console.log('Reservation created:', response);
+      } catch (apiError) {
+        retryCount++;
+        if (retryCount >= 3) {
+          throw apiError; // Re-throw after 3 attempts
+        }
+        console.log(`Retrying... (${retryCount}/3)`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+      }
+    }
+    
+    if (success && response) {
       // Store the reservation with the ID from the backend response
       const reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
-      reservations.push({...reservation, id: response._id});
+      const completeReservation = {...reservation, id: response._id};
+      reservations.push(completeReservation);
       localStorage.setItem('reservations', JSON.stringify(reservations));
-      localStorage.setItem('latestReservation', JSON.stringify({...reservation, id: response._id}));
+      localStorage.setItem('latestReservation', JSON.stringify(completeReservation));
 
       // Dispatch custom event for real-time updates
-      window.dispatchEvent(new CustomEvent('newReservation', { detail: {...reservation, id: response._id} }));
+      window.dispatchEvent(new CustomEvent('newReservation', { detail: completeReservation }));
+
+      // Show success message
+      showNotification('Reservation submitted successfully!', 'success');
 
       // Wait exactly 3.5 seconds before redirecting
       setTimeout(() => {
         isLoading.value = false;
         router.push('/confirmation');
       }, 3500);
-      
-    } catch (error) {
-      console.error('API Error:', error);
-      showNotification('Error submitting reservation. Please try again later.', 'error');
-      isLoading.value = false;
     }
+      
   } catch (error) {
     console.error('Submission error:', error);
-    showNotification('Error submitting reservation. Please try again later.', 'error');
     isLoading.value = false;
+    
+    // Handle connection errors specially
+    if (!navigator.onLine || error.message.includes('Network Error')) {
+      showNotification('Connection error. Please check your internet and try again.', 'error', 8000);
+      return;
+    }
+    
+    // Show specific error message
+    const errorMessage = error.userMessage || 
+                       error.response?.data?.message || 
+                       'Error submitting reservation. Please try again later.';
+    
+    showNotification(errorMessage, 'error');
+    
+    // Log detailed error for debugging
+    console.log('Detailed error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      config: error.config
+    });
   }
 };
 
