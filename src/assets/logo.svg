@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="100%" viewBox="0 0 1000 1000" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FF5B94"/>
+            <stop offset="100%" style="stop-color:#FF1168"/>
+        </linearGradient>
+    </defs>
+    <circle cx="500" cy="500" r="500" fill="#111827"/>
+    <g transform="translate(150, 300)">
+        <text x="0" y="200" font-family="Inter, sans-serif" font-size="200" fill="url(#brandGradient)" font-weight="700" letter-spacing="-5">
+            <tspan>X&amp;DOUGHS</tspan>
+        </text>
+        <path d="M600 180 C 600 140, 620 120, 660 120 S 720 140, 720 180" stroke="url(#brandGradient)" stroke-width="20" fill="none"/>
+    </g>
+</svg> 
